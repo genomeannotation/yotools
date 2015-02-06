@@ -22,11 +22,9 @@ check_directory temp "yotools deoligo sample_data/deoligo_test/ temp/"
 # So the program should create these files:
 #   temp/test1.deoligoed.fastq
 #   temp/deoligo_report.txt
-#   temp/deoligo_stats.tsv
 # Check for existence of each one
 
-for x in "test1.deoligoed.fastq"\
-	"deoligo_report.txt" "deoligo_stats.tsv"
+for x in "test1.deoligoed.fastq" "deoligo_report.txt"
 do
 	check_file "temp/$x" "yotools deoligo sample_data/deoligo_test/ temp/"
 done
@@ -38,3 +36,5 @@ for x in *
 do
 	check_files_match $x ../../temp/$x
 done
+cd ../..
+
