@@ -7,15 +7,13 @@ use std::old_io::{
     File,
 };
 
-use fastq::read_fastq;
-
 mod fastq;
 
 #[allow(dead_code)] // So there aren't warnings on unit tests
 fn main() {
     let mut sample_fastq = BufferedReader::new(File::open(&Path::new("sample_data/foo.fastq")));
     
-    let seqs = read_fastq(&mut sample_fastq);
+    let seqs = fastq::read_fastq(&mut sample_fastq);
 
     println!("{:?}", seqs[0]);
 }
