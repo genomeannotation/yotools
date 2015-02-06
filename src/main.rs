@@ -11,6 +11,7 @@ use fastq::read_fastq;
 
 mod fastq;
 
+#[allow(dead_code)] // So there aren't warnings on unit tests
 fn main() {
     let mut sample_fastq = BufferedReader::new(File::open(&Path::new("sample_data/foo.fastq")));
     

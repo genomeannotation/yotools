@@ -5,7 +5,7 @@ use std::old_io::{
 use std::str::StrExt;
 use std::string::String;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Sequence {
     pub header: String,
     pub bases: String,
@@ -36,4 +36,34 @@ pub fn read_fastq<R: Reader>(fastq: &mut BufferedReader<R>) -> Vec<Sequence> {
     }
 
     seqs
+}
+
+#[test]
+fn test_read_fastq_qual_header() {
+    use std::old_io::MemReader;
+
+    let mut fastq = BufferedReader::new(MemReader::new(b"@header\nGATACA\n+header\nAAAAAA".to_vec()));
+
+    let expected_seq = Sequence {
+        header: "header".to_string(),
+        bases: "GATACA".to_string(),
+        qual: "AAAAAA".to_string(),
+    };
+
+    assert_eq!(vec![expected_seq], read_fastq(&mut fastq));
+}
+
+#[test]
+fn test_read_fastq_no_qual_header() {
+    use std::old_io::MemReader;
+
+    let mut fastq = BufferedReader::new(MemReader::new(b"@header\nGATACA\n+\nAAAAAA".to_vec()));
+
+    let expected_seq = Sequence {
+        header: "header".to_string(),
+        bases: "GATACA".to_string(),
+        qual: "AAAAAA".to_string(),
+    };
+
+    assert_eq!(vec![expected_seq], read_fastq(&mut fastq));
 }
