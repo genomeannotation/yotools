@@ -5,10 +5,12 @@ use std::old_io::{
 use std::str::StrExt;
 use std::string::String;
 
+use seq::Bases;
+
 #[derive(Debug, PartialEq)]
 pub struct Sequence {
     pub header: String,
-    pub bases: String,
+    pub bases: Bases,
     pub qual: String,
 }
 
@@ -30,7 +32,7 @@ pub fn read_fastq<R: Reader>(fastq: &mut BufferedReader<R>) -> Vec<Sequence> {
         // Add the sequence
         seqs.push(Sequence {
             header: header,
-            bases: bases_line.as_slice().trim_right().to_string(),
+            bases: Bases::new(bases_line.as_slice().trim_right().to_string()),
             qual: qual_line.as_slice().trim_right().to_string(),
         });
     }
@@ -46,7 +48,7 @@ fn test_read_fastq_qual_header() {
 
     let expected_seq = Sequence {
         header: "header".to_string(),
-        bases: "GATACA".to_string(),
+        bases: Bases::new("GATACA".to_string()),
         qual: "AAAAAA".to_string(),
     };
 
@@ -61,7 +63,7 @@ fn test_read_fastq_no_qual_header() {
 
     let expected_seq = Sequence {
         header: "header".to_string(),
-        bases: "GATACA".to_string(),
+        bases: Bases::new("GATACA".to_string()),
         qual: "AAAAAA".to_string(),
     };
 

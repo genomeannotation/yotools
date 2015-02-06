@@ -8,6 +8,7 @@ use std::old_io::{
 };
 
 mod fastq;
+mod seq;
 
 #[allow(dead_code)] // So there aren't warnings on unit tests
 fn main() {
