@@ -1,9 +1,9 @@
 [package]
 
-name = "yomama"
+name = "yotools"
 version = "0.0.1"
 authors = [ "Theodore DeRego <tderego94@gmail.com>" ]
 
 [[bin]]
 
-name = "yomama"    
+name = "yotools"    
