@@ -1,6 +1,7 @@
 #![feature(io)]
 #![feature(core)]
 #![feature(path)]
+#![feature(unicode)]
 
 use std::old_io::{
     BufferedReader,
