@@ -4,6 +4,7 @@ pub enum Base {
     T,
     G,
     C,
+    N,
 }
 
 impl Base {
@@ -15,6 +16,7 @@ impl Base {
             T => A,
             G => C,
             C => G,
+            N => N,
         }
     }
 }
@@ -26,7 +28,7 @@ pub struct Bases {
 
 impl Bases {
     /// Builds a new Bases sequence from a &str
-    /// Panics if bases contains anything other than AaTtGgCc
+    /// Panics if bases contains anything other than AaTtGgCcNn
     pub fn from_str(bases: &str) -> Bases {
         use self::Base::*;
 
@@ -37,6 +39,7 @@ impl Bases {
                     'T' => T,
                     'G' => G,
                     'C' => C,
+                    'N' => N,
                     _ => unreachable!(),
                 }
             }
@@ -106,6 +109,11 @@ impl Bases {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Unit tests
+
+#[test]
+fn bases_from_str() {
+    Bases::from_str("AaTtGgCcNn");
+}
 
 #[test]
 fn reverse_complement() {
