@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::old_io::{
     BufferedReader,
+    BufferedWriter,
     File,
 };
 
@@ -23,8 +24,6 @@ fn main() {
     
     let seqs = fastq::read_fastq(&mut fastq);
 
-    println!("Sequences: {:?}", seqs);
-
     // Read the oligos file
 
     // Maps oligo name to forward and reverse barcode sequences
@@ -33,9 +32,9 @@ fn main() {
     let oligos_file = File::open(&Path::new("sample_data/deoligo_test/test.oligos"));
     let mut oligos_file = BufferedReader::new(oligos_file);
 
-    let mut line_number = 0u32;
+    let mut line_number: u32 = 0;
     while let Ok(line) = oligos_file.read_line() {
-        let line_split: Vec<String> = line.as_slice().split('\t').map(|s| s.to_string()).collect();
+        let line_split: Vec<String> = line.as_slice().split('\t').map(|s| s.trim_right().to_string()).collect();
         
         // Verify that the line is properly formatted
         if line_split.len() != 3 {
@@ -53,14 +52,13 @@ fn main() {
         line_number += 1;
     }
 
-    println!("Oligos: {:?}", oligos);
-
     // Sort the sequences by oligo
 
     // Maps oligo name to list of debarcoded seqs
     let mut seqs_sorted: HashMap<String, Vec<Sequence>> = HashMap::new();
+    let mut failed_seqs = vec!();
 
-    for seq in seqs.iter() {
+    'seqs: for seq in seqs.iter() {
         let mut bases = seq.bases.clone();
         for (oligo_name, &(ref forward, ref reverse)) in oligos.iter() {
             // Attempt to debarcode the sequence
@@ -75,7 +73,7 @@ fn main() {
             if debarcoded {
                 // Build the new sorted sequence
                 let sorted_seq = Sequence {
-                    header: seq.header.clone(),
+                    header: seq.header.clone() + " " + oligo_name,
                     bases: bases,
                     qual: seq.qual.clone(),
                 };
@@ -87,10 +85,36 @@ fn main() {
                 }
 
                 // Done with this sequence, move on
-                break;
+                continue 'seqs;
             }
         }
+
+        // If we made it down here, the sequence failed to deoligo
+        failed_seqs.push(seq.clone());
     }
 
-    println!("Sorted seqs {:?}", seqs_sorted);
+    // Output report
+    let mut output_report = BufferedWriter::new(File::create(&Path::new("output_report.txt")));
+
+    output_report.write_line("## OLIGO STATS ##").unwrap();
+    output_report.write_line("").unwrap();
+    output_report.write_line("oligo_id\tcount").unwrap();
+    output_report.write_line("--------\t-----").unwrap();
+    for (oligo_name, seqs) in seqs_sorted.iter() {
+        output_report.write_line(format!("{}\t{}", oligo_name, seqs.len()).as_slice()).unwrap();
+    }
+    output_report.write_line("").unwrap();
+    output_report.write_line("## READ STATS ##").unwrap();
+    output_report.write_line("").unwrap();
+
+    let num_deoligoed = seqs_sorted.values().fold(0, |count, seqs| count + seqs.len());
+
+    output_report.write_line(format!("Reads Successfully Deoligoed: {}", num_deoligoed).as_slice()).unwrap();
+    output_report.write_line(format!("Reads Failed Deoligoed: {}", seqs.len() - num_deoligoed).as_slice()).unwrap();
+    output_report.write_line("").unwrap();
+    output_report.write_line("List of reads that failed to deoligo:").unwrap();
+    
+    for seq in failed_seqs.iter() {
+        output_report.write_line(seq.header.as_slice()).unwrap();
+    }
 }

@@ -74,12 +74,8 @@ impl Bases {
                 diff_count += 1;
             }
             if diff_count > diffs_allowed {
-                break;
+                return false;
             }
-        }
-
-        if diff_count > diffs_allowed {
-            return false;
         }
 
         // Reset diff count
@@ -91,12 +87,8 @@ impl Bases {
                 diff_count += 1;
             }
             if diff_count > diffs_allowed {
-                break;
+                return false;
             }
-        }
-
-        if diff_count > diffs_allowed {
-            return false;
         }
 
         let start = forward_barcode.bases.len();
