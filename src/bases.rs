@@ -59,14 +59,13 @@ impl Bases {
     /// Tries to debarcode the sequence
     /// On success returns debarcoded sequence
     /// On failure returns original sequence
-    pub fn debarcode(mut self, forward_barcode: &Bases, reverse_barcode: &Bases, diffs_allowed: u16)
-        -> Result<Bases, Bases>
+    pub fn debarcode(&mut self, forward_barcode: &Bases, reverse_barcode: &Bases, diffs_allowed: u16) -> bool
     {
         let mut diff_count = 0;
 
         // Make sure the sequence is long enough to debarcode with these barcodes
         if self.bases.len() < forward_barcode.bases.len() + reverse_barcode.bases.len() {
-            return Err(self);
+            return false;
         }
 
         // Compare forward
@@ -80,7 +79,7 @@ impl Bases {
         }
 
         if diff_count > diffs_allowed {
-            return Err(self);
+            return false;
         }
 
         // Reset diff count
@@ -97,13 +96,14 @@ impl Bases {
         }
 
         if diff_count > diffs_allowed {
-            return Err(self);
+            return false;
         }
 
         let start = forward_barcode.bases.len();
         let end = self.bases.len()-reverse_barcode.bases.len();
         self.bases = self.bases[start..end].to_vec();
-        Ok(self)
+
+        true
     }
 }
 
