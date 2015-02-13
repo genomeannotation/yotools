@@ -19,6 +19,18 @@ impl Base {
             N => N,
         }
     }
+
+    pub fn to_char(self) -> char {
+        use self::Base::*;
+
+        match self {
+            A => 'A',
+            T => 'T',
+            G => 'G',
+            C => 'C',
+            N => 'N',
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -46,6 +58,11 @@ impl Bases {
         ).collect();
 
         Bases { bases: bases }
+    }
+
+    /// Gets the bases sequence as a String
+    pub fn as_string(&self) -> String {
+        self.bases.iter().map(|b| b.to_char()).collect()
     }
 
     /// Reverse complements the sequence
@@ -104,7 +121,19 @@ impl Bases {
 
 #[test]
 fn bases_from_str() {
-    Bases::from_str("AaTtGgCcNn");
+    use self::Base::*;
+
+    let bases = Bases::from_str("AaTtGgCcNn");
+    let expected = Bases { bases: vec![A, A, T, T, G, G, C, C, N, N] };
+    assert_eq!(bases, expected);
+}
+
+#[test]
+fn bases_as_string() {
+    use self::Base::*;
+
+    let bases = Bases { bases: vec![A, A, T, T, G, G, C, C, N, N] };
+    assert_eq!(bases.as_string().as_slice(), "AATTGGCCNN");
 }
 
 #[test]
@@ -118,33 +147,36 @@ fn reverse_complement() {
 
 #[test]
 fn debarcode_works_properly() {
-    let bases = Bases::from_str("ATAGGATACACTAT");
+    let mut bases = Bases::from_str("ATAGGATACACTAT");
 
     let ref forward = Bases::from_str("ATAG");
     let ref reverse = Bases::from_str("ATAG");
     let debarcoded = bases.debarcode(forward, reverse, 0);
 
-    assert_eq!(debarcoded, Ok(Bases::from_str("GATACA")));
+    assert!(debarcoded);
+    assert_eq!(bases, Bases::from_str("GATACA"));
 }
 
 #[test]
 fn debarcode_works_properly_with_diff() {
-    let bases = Bases::from_str("ATTGGATACATTAT");
+    let mut bases = Bases::from_str("ATTGGATACATTAT");
 
     let ref forward = Bases::from_str("ATAG");
     let ref reverse = Bases::from_str("ATAG");
     let debarcoded = bases.debarcode(forward, reverse, 1);
 
-    assert_eq!(debarcoded, Ok(Bases::from_str("GATACA")));
+    assert!(debarcoded);
+    assert_eq!(bases, Bases::from_str("GATACA"));
 }
 
 #[test]
 fn debarcode_fails_properly() {
-    let bases = Bases::from_str("ATTGGATACACTAT");
+    let mut bases = Bases::from_str("ATTGGATACACTAT");
 
     let ref forward = Bases::from_str("ATAG");
     let ref reverse = Bases::from_str("ATAG");
     let debarcoded = bases.debarcode(forward, reverse, 0);
 
-    assert_eq!(debarcoded, Err(Bases::from_str("ATTGGATACACTAT")));
+    assert!(!debarcoded);
+    assert_eq!(bases, Bases::from_str("ATTGGATACACTAT"));
 }

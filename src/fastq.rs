@@ -1,17 +1,35 @@
 use std::old_io::{
     BufferedReader,
+    BufferedWriter,
+    IoResult,
     Reader,
+    Writer,
 };
 use std::str::StrExt;
 use std::string::String;
 
 use bases::Bases;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Sequence {
     pub header: String,
     pub bases: Bases,
     pub qual: String,
+}
+
+impl Sequence {
+    pub fn debarcode(&mut self, forward_barcode: &Bases, reverse_barcode: &Bases, diffs_allowed: u16) -> bool {
+        let start = forward_barcode.bases.len();
+        let end = self.bases.bases.len() - reverse_barcode.bases.len();
+
+        let debarcoded = self.bases.debarcode(forward_barcode, reverse_barcode, diffs_allowed);
+        
+        if debarcoded {
+            self.qual = self.qual[start..end].to_string();
+        }
+
+        debarcoded
+    }
 }
 
 pub fn read_fastq<R: Reader>(fastq: &mut BufferedReader<R>) -> Vec<Sequence> {
@@ -38,6 +56,50 @@ pub fn read_fastq<R: Reader>(fastq: &mut BufferedReader<R>) -> Vec<Sequence> {
     }
 
     seqs
+}
+
+pub fn write_fastq<'a, W, I>(fastq: &mut BufferedWriter<W>, seqs: I) -> IoResult<()>
+    where
+        W: Writer,
+        I: Iterator<Item=&'a Sequence>,
+{
+    for seq in seqs {
+        try!(fastq.write_line(format!("@{}", seq.header).as_slice()));
+        try!(fastq.write_line(seq.bases.as_string().as_slice()));
+        try!(fastq.write_line("+"));
+        try!(fastq.write_line(seq.qual.as_slice()));
+    }
+    Ok(())
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[test]
+fn test_sequence_debarcodes_properly() {
+    let mut seq = Sequence {
+        header: "foo".to_string(),
+        bases: Bases::from_str("ATGAAAAACAT"),
+        qual: "ABCDEFGHIJK".to_string(),
+    };
+
+    let debarcoded = seq.debarcode(&Bases::from_str("ATG"), &Bases::from_str("ATG"), 0);
+    assert!(debarcoded);
+    assert_eq!(seq.bases, Bases::from_str("AAAAA"));
+    assert_eq!(seq.qual, "DEFGH".to_string());
+}
+
+#[test]
+fn test_sequence_fails_debarcode_properly() {
+    let mut seq = Sequence {
+        header: "foo".to_string(),
+        bases: Bases::from_str("ATGAAAAACCT"),
+        qual: "ABCDEFGHIJK".to_string(),
+    };
+
+    let debarcoded = seq.debarcode(&Bases::from_str("ATG"), &Bases::from_str("ATG"), 0);
+    assert!(!debarcoded);
+    assert_eq!(seq.bases, Bases::from_str("ATGAAAAACCT"));
+    assert_eq!(seq.qual, "ABCDEFGHIJK".to_string());
 }
 
 #[test]
@@ -68,4 +130,40 @@ fn test_read_fastq_no_qual_header() {
     };
 
     assert_eq!(vec![expected_seq], read_fastq(&mut fastq));
+}
+
+#[test]
+fn test_write_fastq() {
+    use std::old_io::MemWriter;
+    use std::str::from_utf8;
+
+    let mut fastq = BufferedWriter::new(MemWriter::new());
+
+    let seq1 = Sequence {
+        header: "foo1".to_string(),
+        bases: Bases::from_str("ATG"),
+        qual: "AAA".to_string(),
+    };
+
+    let seq2 = Sequence {
+        header: "foo2".to_string(),
+        bases: Bases::from_str("GATACA"),
+        qual: "AAAAAA".to_string(),
+    };
+
+    let expected_fastq =
+        "@foo1\n\
+        ATG\n\
+        +\n\
+        AAA\n\
+        @foo2\n\
+        GATACA\n\
+        +\n\
+        AAAAAA\n";
+
+    let result = write_fastq(&mut fastq, vec![seq1, seq2].iter());
+
+    assert!(result.is_ok());
+
+    assert_eq!(from_utf8(fastq.into_inner().into_inner().as_slice()).unwrap(), expected_fastq);
 }

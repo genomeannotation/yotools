@@ -56,14 +56,15 @@ fn main() {
 
     // Maps oligo name to list of debarcoded seqs
     let mut seqs_sorted: HashMap<String, Vec<Sequence>> = HashMap::new();
+    let mut succeeded_seqs = vec!();
     let mut failed_seqs = vec!();
 
     'seqs: for seq in seqs.iter() {
-        let mut bases = seq.bases.clone();
+        let mut sorted_seq = seq.clone();
         for (oligo_name, &(ref forward, ref reverse)) in oligos.iter() {
             // Attempt to debarcode the sequence
             let debarcoded =
-                bases.debarcode(
+                sorted_seq.debarcode(
                     &Bases::from_str(forward.as_slice()),
                     &Bases::from_str(reverse.as_slice()),
                     0,
@@ -72,11 +73,10 @@ fn main() {
             // Check if debarcoding succeeded
             if debarcoded {
                 // Build the new sorted sequence
-                let sorted_seq = Sequence {
-                    header: seq.header.clone() + " " + oligo_name,
-                    bases: bases,
-                    qual: seq.qual.clone(),
-                };
+                sorted_seq.header.push_str(" ");
+                sorted_seq.header.push_str(oligo_name.as_slice());
+
+                succeeded_seqs.push(sorted_seq.clone());
 
                 // Update our sorted sequences map
                 match seqs_sorted.entry(oligo_name.clone()) {
@@ -117,4 +117,12 @@ fn main() {
     for seq in failed_seqs.iter() {
         output_report.write_line(seq.header.as_slice()).unwrap();
     }
+
+    // Output sorted fastq
+    let mut sorted_fastq = BufferedWriter::new(File::create(&Path::new("sorted.fastq")));
+    fastq::write_fastq(&mut sorted_fastq, succeeded_seqs.iter());
+
+    // Output failed fastq
+    let mut failed_fastq = BufferedWriter::new(File::create(&Path::new("failed.fastq")));
+    fastq::write_fastq(&mut failed_fastq, failed_seqs.iter());
 }
