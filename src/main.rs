@@ -20,7 +20,7 @@ mod fastq;
 
 #[allow(dead_code)] // So there aren't warnings on unit tests
 fn main() {
-    let mut fastq = BufferedReader::new(File::open(&Path::new("sample_data/deoligo_test/test1.fastq")));
+    let mut fastq = BufferedReader::new(File::open(&Path::new("in.fastq")));
     
     let seqs = fastq::read_fastq(&mut fastq);
 
@@ -29,7 +29,7 @@ fn main() {
     // Maps oligo name to forward and reverse barcode sequences
     let mut oligos: HashMap<String, (String, String)> = HashMap::new();
 
-    let oligos_file = File::open(&Path::new("sample_data/deoligo_test/test.oligos"));
+    let oligos_file = File::open(&Path::new("in.oligos"));
     let mut oligos_file = BufferedReader::new(oligos_file);
 
     let mut line_number: u32 = 0;
