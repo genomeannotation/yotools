@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Base {
     A,
@@ -116,6 +118,26 @@ impl Bases {
     }
 }
 
+impl<'a> Add<&'a Bases> for Bases {
+    type Output = Bases;
+
+    fn add(self, _rhs: &'a Bases) -> Bases {
+        let Bases { bases: mut bases } = self;
+        bases.push_all(_rhs.bases.as_slice());
+        Bases { bases: bases }
+    }
+}
+
+impl Add for Bases {
+    type Output = Bases;
+
+    fn add(self, _rhs: Bases) -> Bases {
+        let Bases { bases: mut bases } = self;
+        bases.push_all(_rhs.bases.as_slice());
+        Bases { bases: bases }
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Unit tests
 
@@ -179,4 +201,20 @@ fn debarcode_fails_properly() {
 
     assert!(!debarcoded);
     assert_eq!(bases, Bases::from_str("ATTGGATACACTAT"));
+}
+
+#[test]
+fn add_bases() {
+    let a = Bases::from_str("ATG");
+    let b = Bases::from_str("TAG");
+
+    assert_eq!(a + b, Bases::from_str("ATGTAG"));
+}
+
+#[test]
+fn add_bases_ref() {
+    let a = Bases::from_str("ATG");
+    let b = Bases::from_str("TAG");
+
+    assert_eq!(a + &b, Bases::from_str("ATGTAG"));
 }
