@@ -1,8 +1,9 @@
 #![feature(io)]
 #![feature(core)]
 #![feature(path)]
-#![feature(unicode)]
 #![feature(std_misc)]
+
+extern crate bio;
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -12,13 +13,9 @@ use std::old_io::{
     File,
 };
 
-use bases::Bases;
-use fastq::Sequence;
+use bio::bases;
+use bio::fastq;
 
-mod bases;
-mod fastq;
-
-#[allow(dead_code)] // So there aren't warnings on unit tests
 fn main() {
     let mut fastq = BufferedReader::new(File::open(&Path::new("in.fastq")));
     
@@ -55,7 +52,7 @@ fn main() {
     // Sort the sequences by oligo
 
     // Maps oligo name to list of debarcoded seqs
-    let mut seqs_sorted: HashMap<String, Vec<Sequence>> = HashMap::new();
+    let mut seqs_sorted: HashMap<String, Vec<fastq::Sequence>> = HashMap::new();
     let mut succeeded_seqs = vec!();
     let mut failed_seqs = vec!();
 
@@ -65,8 +62,8 @@ fn main() {
             // Attempt to debarcode the sequence
             let debarcoded =
                 sorted_seq.debarcode(
-                    &Bases::from_str(forward.as_slice()),
-                    &Bases::from_str(reverse.as_slice()),
+                    &bases::Bases::from_str(forward.as_slice()),
+                    &bases::Bases::from_str(reverse.as_slice()),
                     0,
                 );
 
@@ -120,9 +117,9 @@ fn main() {
 
     // Output sorted fastq
     let mut sorted_fastq = BufferedWriter::new(File::create(&Path::new("sorted.fastq")));
-    fastq::write_fastq(&mut sorted_fastq, succeeded_seqs.iter());
+    fastq::write_fastq(&mut sorted_fastq, succeeded_seqs.iter()).ok().expect("Failed to write sorted fastq");
 
     // Output failed fastq
     let mut failed_fastq = BufferedWriter::new(File::create(&Path::new("failed.fastq")));
-    fastq::write_fastq(&mut failed_fastq, failed_seqs.iter());
+    fastq::write_fastq(&mut failed_fastq, failed_seqs.iter()).ok().expect("Failed to write failed fastq");
 }

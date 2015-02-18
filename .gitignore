@@ -1,4 +1,4 @@
 *.swp
-target/*
-Cargo.lock
-temp/*
+*/target
+*/Cargo.lock
+*/data
