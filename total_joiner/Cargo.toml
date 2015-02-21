@@ -3,3 +3,7 @@
 name = "total_joiner"
 version = "0.0.1"
 authors = ["Theodore DeRego <tderego94@gmail.com>"]
+
+[dependencies.bio]
+
+path = "../bio-rs"
