@@ -28,7 +28,7 @@ fn main() {
         });
     }
 
-    let mut sorted_fastq = BufferedWriter::new(File::open(&Path::new("joined.fastq"))); 
+    let mut sorted_fastq = BufferedWriter::new(File::create(&Path::new("joined.fastq"))); 
 
     fastq::write_fastq(&mut sorted_fastq, joined_seqs.iter());
 }
