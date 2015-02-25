@@ -64,11 +64,29 @@ pub fn write_fastq<'a, W, I>(fastq: &mut BufferedWriter<W>, seqs: I) -> IoResult
         I: Iterator<Item=&'a Sequence>,
 {
     for seq in seqs {
-        try!(fastq.write_line(format!("@{}", seq.header).as_slice()));
-        try!(fastq.write_line(seq.bases.as_string().as_slice()));
-        try!(fastq.write_line("+"));
-        try!(fastq.write_line(seq.qual.as_slice()));
+        try!(write_fastq_seq(fastq, seq));
     }
+    Ok(())
+}
+
+// Owned version of write_fastq function
+// You should use write_fastq if you can, as this consumes the Sequences in the iterator
+pub fn write_fastq_owned<W, I>(fastq: &mut BufferedWriter<W>, seqs: I) -> IoResult<()>
+    where
+        W: Writer,
+        I: Iterator<Item=Sequence>,
+{
+    for seq in seqs {
+        try!(write_fastq_seq(fastq, &seq));
+    }
+    Ok(())
+}
+
+fn write_fastq_seq<W: Writer>(fastq: &mut BufferedWriter<W>, seq: &Sequence) -> IoResult<()> {
+    try!(fastq.write_line(format!("@{}", seq.header).as_slice()));
+    try!(fastq.write_line(seq.bases.as_string().as_slice()));
+    try!(fastq.write_line("+"));
+    try!(fastq.write_line(seq.qual.as_slice()));
     Ok(())
 }
 
