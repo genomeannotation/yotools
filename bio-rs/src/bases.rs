@@ -67,6 +67,18 @@ impl Bases {
         self.bases.iter().map(|b| b.to_char()).collect()
     }
 
+    // TODO look into deprecating head and tail by supporting indexing and slicing on Bases
+
+    /// Creates new Bases from the first n bases
+    pub fn head(&self, n: usize) -> Bases {
+        Bases { bases: self.bases.iter().take(n).map(|b| b.clone()).collect() }
+    }
+
+    /// Creates new Bases from the last n bases
+    pub fn tail(&self, n: usize) -> Bases {
+        Bases { bases: self.bases.iter().rev().take(n).map(|b| b.clone()).collect() }
+    }
+
     /// Reverse complements the sequence
     pub fn reverse_complement(&mut self) {
         self.bases.reverse();
@@ -146,6 +158,20 @@ fn bases_as_string() {
 
     let bases = Bases { bases: vec![A, A, T, T, G, G, C, C, N, N] };
     assert_eq!(bases.as_string().as_slice(), "AATTGGCCNN");
+}
+
+#[test]
+fn head_bases() {
+    let bases = Bases::from_str("GATACA");
+    
+    assert_eq!(bases.head(3), Bases::from_str("GAT"));
+}
+
+#[test]
+fn tail_bases() {
+    let bases = Bases::from_str("GATACA");
+    
+    assert_eq!(bases.tail(3), Bases::from_str("ACA"));
 }
 
 #[test]
