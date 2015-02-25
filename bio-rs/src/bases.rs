@@ -76,7 +76,9 @@ impl Bases {
 
     /// Creates new Bases from the last n bases
     pub fn tail(&self, n: usize) -> Bases {
-        Bases { bases: self.bases.iter().rev().take(n).map(|b| b.clone()).collect() }
+        let mut bases: Vec<Base> = self.bases.iter().rev().take(n).map(|b| b.clone()).collect();
+        bases.reverse();
+        Bases { bases: bases }
     }
 
     /// Reverse complements the sequence
@@ -162,16 +164,16 @@ fn bases_as_string() {
 
 #[test]
 fn head_bases() {
-    let bases = Bases::from_str("GATACA");
+    let bases = Bases::from_str("GATACT");
     
     assert_eq!(bases.head(3), Bases::from_str("GAT"));
 }
 
 #[test]
 fn tail_bases() {
-    let bases = Bases::from_str("GATACA");
+    let bases = Bases::from_str("GATACT");
     
-    assert_eq!(bases.tail(3), Bases::from_str("ACA"));
+    assert_eq!(bases.tail(3), Bases::from_str("ACT"));
 }
 
 #[test]
