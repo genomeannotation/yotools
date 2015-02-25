@@ -18,17 +18,15 @@ fn main() {
     let forward_seqs = fastq::read_fastq(&mut forward_fastq);
     let reverse_seqs = fastq::read_fastq(&mut reverse_fastq);
 
-    let mut joined_seqs = vec!();
-
-    for (forward_seq, reverse_seq) in forward_seqs.into_iter().zip(reverse_seqs.into_iter()) {
-        joined_seqs.push(fastq::Sequence {
+    let joined_seqs_iter = forward_seqs.into_iter().zip(reverse_seqs.into_iter()).map(|(forward_seq, reverse_seq)| {
+        fastq::Sequence {
             header: forward_seq.header,
             bases: forward_seq.bases + &bases::Bases::from_str("NNNNNNNNNN") + &reverse_seq.bases,
             qual: forward_seq.qual + "NNNNNNNNNN" + &reverse_seq.qual,
-        });
-    }
+        }
+    });
 
     let mut sorted_fastq = BufferedWriter::new(File::create(&Path::new("joined.fastq"))); 
 
-    fastq::write_fastq(&mut sorted_fastq, joined_seqs.iter());
+    fastq::write_fastq_owned(&mut sorted_fastq, joined_seqs_iter);
 }
