@@ -18,6 +18,22 @@ pub struct Sequence {
 }
 
 impl Sequence {
+    pub fn head(&self, n: usize) -> Sequence {
+        Sequence {
+            header: self.header.clone(),
+            bases: self.bases.head(n),
+            qual: self.qual[0..n].to_string(),
+        }
+    }
+
+    pub fn tail(&self, n: usize) -> Sequence {
+        Sequence {
+            header: self.header.clone(),
+            bases: self.bases.tail(n),
+            qual: self.qual[self.qual.len()-n..].to_string(),
+        }
+    }
+
     pub fn debarcode(&mut self, forward_barcode: &Bases, reverse_barcode: &Bases, diffs_allowed: u16) -> bool {
         let start = forward_barcode.bases.len();
         let end = self.bases.bases.len() - reverse_barcode.bases.len();
@@ -93,6 +109,34 @@ fn write_fastq_seq<W: Writer>(fastq: &mut BufferedWriter<W>, seq: &Sequence) -> 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[test]
+fn test_sequence_head() {
+    let seq = Sequence {
+        header: "foo".to_string(),
+        bases: Bases::from_str("ATGAAAAACAT"),
+        qual: "ABCDEFGHIJK".to_string(),
+    };
+
+    let seq = seq.head(3);
+    assert_eq!(seq.header, "foo");
+    assert_eq!(seq.bases, Bases::from_str("ATG"));
+    assert_eq!(seq.qual, "ABC".to_string());
+}
+
+#[test]
+fn test_sequence_tail() {
+    let seq = Sequence {
+        header: "foo".to_string(),
+        bases: Bases::from_str("ATGAAAAACAT"),
+        qual: "ABCDEFGHIJK".to_string(),
+    };
+
+    let seq = seq.tail(3);
+    assert_eq!(seq.header, "foo");
+    assert_eq!(seq.bases, Bases::from_str("CAT"));
+    assert_eq!(seq.qual, "IJK".to_string());
+}
+
+#[test]
 fn test_sequence_debarcodes_properly() {
     let mut seq = Sequence {
         header: "foo".to_string(),
@@ -102,6 +146,7 @@ fn test_sequence_debarcodes_properly() {
 
     let debarcoded = seq.debarcode(&Bases::from_str("ATG"), &Bases::from_str("ATG"), 0);
     assert!(debarcoded);
+    assert_eq!(seq.header, "foo");
     assert_eq!(seq.bases, Bases::from_str("AAAAA"));
     assert_eq!(seq.qual, "DEFGH".to_string());
 }
@@ -116,6 +161,7 @@ fn test_sequence_fails_debarcode_properly() {
 
     let debarcoded = seq.debarcode(&Bases::from_str("ATG"), &Bases::from_str("ATG"), 0);
     assert!(!debarcoded);
+    assert_eq!(seq.header, "foo");
     assert_eq!(seq.bases, Bases::from_str("ATGAAAAACCT"));
     assert_eq!(seq.qual, "ABCDEFGHIJK".to_string());
 }
