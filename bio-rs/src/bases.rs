@@ -67,6 +67,11 @@ impl Bases {
         self.bases.iter().map(|b| b.to_char()).collect()
     }
 
+    /// Returns the length of the bases sequence
+    pub fn len(&self) -> usize {
+        self.bases.len()
+    }
+
     // TODO look into deprecating head and tail by supporting indexing and slicing on Bases
 
     /// Creates new Bases from the first n bases

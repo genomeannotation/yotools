@@ -17,6 +17,8 @@ use find::Find;
 mod find;
 
 fn main() {
+    use ProcessedSequence::*;
+
     let oligo_size = 10;
 
     let mut forward_fastq = BufferedReader::new(File::open(&Path::new("forward.fastq")));
@@ -25,26 +27,73 @@ fn main() {
     let forward_seqs = fastq::read_fastq(&mut forward_fastq);
     let reverse_seqs = fastq::read_fastq(&mut reverse_fastq);
 
-    let joined_seqs_iter = forward_seqs.into_iter().zip(reverse_seqs.into_iter()).map(|(forward_seq, reverse_seq)| {
-        // Get forward oligo from forward sequence
-        let forward_oligo = forward_seq.bases.head(oligo_size);
+    let maybe_joined_seqs =
+        forward_seqs.into_iter().zip(reverse_seqs.into_iter()).map(|(forward_seq, reverse_seq)| {
+            // Get forward oligo from forward sequence
+            let forward_oligo = forward_seq.bases.head(oligo_size);
 
-        // Get reverse oligo from the reverse sequence
-        let mut reverse_oligo = reverse_seq.bases.head(oligo_size);
-        reverse_oligo.reverse_complement();
+            // Get reverse oligo from the reverse sequence
+            let mut reverse_oligo = reverse_seq.bases.head(oligo_size);
+            reverse_oligo.reverse_complement();
 
-        if let Some(index) = forward_seq.bases.bases.find(reverse_oligo.bases.as_slice()) {
-            println!("Found oligo at {:?}", index);
+            match forward_seq.bases.bases.find(reverse_oligo.bases.as_slice()) { 
+                Some(index) => {
+                    let merged_len = index + reverse_oligo.len();
+                    Joined(fastq::Sequence {
+                        header: forward_seq.header,
+                        bases: forward_seq.bases.head(merged_len),
+                        qual: forward_seq.qual[0..merged_len].to_string(),
+                    })
+                },
+                None => Unjoined(forward_seq, reverse_seq),
+            }
+        });
+
+    let joined_seqs = maybe_joined_seqs.filter_map(|s| s.map_joined());
+    //let unjoined_seqs = maybe_joined_seqs.filter_map(|s| s.map_unjoined());
+
+    //let unjoined_forward_seqs = unjoined_seqs.map(|(f, _)| f);
+    //let unjoined_reverse_seqs = unjoined_seqs.map(|(_, r)| r);
+    
+    // Write joined fastq
+    let mut joined_fastq = BufferedWriter::new(File::create(&Path::new("joined.fastq"))); 
+    fastq::write_fastq_owned(&mut joined_fastq, joined_seqs).ok()
+        .expect("Failed to write joined fastq file");
+
+    // Write unjoined forward fastq
+    /*let mut unjoined_forward_fastq = BufferedWriter::new(File::create(&Path::new("unjoined_forward.fastq"))); 
+    fastq::write_fastq_owned(&mut unjoined_forward_fastq, unjoined_forward_seqs).ok()
+        .expect("Failed to write unjoined forward fastq file");
+
+    // Write unjoined reverse fastq
+    let mut unjoined_reverse_fastq = BufferedWriter::new(File::create(&Path::new("unjoined_reverse.fastq"))); 
+    fastq::write_fastq_owned(&mut unjoined_reverse_fastq, unjoined_reverse_seqs).ok()
+        .expect("Failed to write unjoined reverse fastq file");*/
+}
+
+enum ProcessedSequence {
+    Joined(fastq::Sequence),
+    Unjoined(fastq::Sequence, fastq::Sequence),
+}
+
+impl ProcessedSequence {
+    fn map_joined(self) -> Option<fastq::Sequence> {
+        use ProcessedSequence::*;
+
+        if let Joined(sequence) = self {
+            Some(sequence)
+        } else {
+            None
         }
+    }
 
-        fastq::Sequence {
-            header: forward_seq.header,
-            bases: forward_oligo,
-            qual: forward_seq.qual,
+    fn map_unjoined(self) -> Option<(fastq::Sequence, fastq::Sequence)> {
+        use ProcessedSequence::*;
+        
+        if let Unjoined(forward, reverse) = self {
+            Some((forward, reverse))
+        } else {
+            None
         }
-    });
-
-    let mut sorted_fastq = BufferedWriter::new(File::create(&Path::new("joined.fastq"))); 
-
-    fastq::write_fastq_owned(&mut sorted_fastq, joined_seqs_iter).ok().expect("Failed to write fastq file");
+    }
 }
