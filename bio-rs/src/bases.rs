@@ -192,10 +192,10 @@ fn reverse_complement() {
 
 #[test]
 fn debarcode_works_properly() {
-    let mut bases = Bases::from_str("ATAGGATACACTAT");
+    let mut bases = Bases::from_str("ATAGGATACAATAG");
 
     let ref forward = Bases::from_str("ATAG");
-    let ref reverse = Bases::from_str("ATAG");
+    let ref reverse = Bases::from_str("CTAT");
     let debarcoded = bases.debarcode(forward, reverse, 0);
 
     assert!(debarcoded);
@@ -204,10 +204,10 @@ fn debarcode_works_properly() {
 
 #[test]
 fn debarcode_works_properly_with_diff() {
-    let mut bases = Bases::from_str("ATTGGATACATTAT");
+    let mut bases = Bases::from_str("ATTGGATACAATAT");
 
     let ref forward = Bases::from_str("ATAG");
-    let ref reverse = Bases::from_str("ATAG");
+    let ref reverse = Bases::from_str("CTAT");
     let debarcoded = bases.debarcode(forward, reverse, 1);
 
     assert!(debarcoded);
