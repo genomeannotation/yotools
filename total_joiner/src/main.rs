@@ -49,28 +49,35 @@ fn main() {
             }
         });
 
-    let joined_seqs = maybe_joined_seqs.filter_map(|s| s.map_joined());
-    //let unjoined_seqs = maybe_joined_seqs.filter_map(|s| s.map_unjoined());
+    let maybe_joined_seqs: Vec<ProcessedSequence> = maybe_joined_seqs.collect();
 
-    //let unjoined_forward_seqs = unjoined_seqs.map(|(f, _)| f);
-    //let unjoined_reverse_seqs = unjoined_seqs.map(|(_, r)| r);
-    
-    // Write joined fastq
-    let mut joined_fastq = BufferedWriter::new(File::create(&Path::new("joined.fastq"))); 
-    fastq::write_fastq_owned(&mut joined_fastq, joined_seqs).ok()
-        .expect("Failed to write joined fastq file");
+    {
+        let joined_seqs = maybe_joined_seqs.iter().filter_map(|s| s.clone().map_joined());
+        
+        // Write joined fastq
+        let mut joined_fastq = BufferedWriter::new(File::create(&Path::new("joined.fastq"))); 
+        fastq::write_fastq_owned(&mut joined_fastq, joined_seqs).ok()
+            .expect("Failed to write joined fastq file");
+    }
+
+    // Prepare unjoined iterators
+    let unjoined_seqs: Vec<(fastq::Sequence, fastq::Sequence)> = maybe_joined_seqs.into_iter().filter_map(|s| s.map_unjoined()).collect();
+
+    let unjoined_forward_seqs = unjoined_seqs.iter().map(|&(ref f, _)| f);
+    let unjoined_reverse_seqs = unjoined_seqs.iter().map(|&(_, ref r)| r);
 
     // Write unjoined forward fastq
-    /*let mut unjoined_forward_fastq = BufferedWriter::new(File::create(&Path::new("unjoined_forward.fastq"))); 
-    fastq::write_fastq_owned(&mut unjoined_forward_fastq, unjoined_forward_seqs).ok()
+    let mut unjoined_forward_fastq = BufferedWriter::new(File::create(&Path::new("unjoined_forward.fastq"))); 
+    fastq::write_fastq(&mut unjoined_forward_fastq, unjoined_forward_seqs).ok()
         .expect("Failed to write unjoined forward fastq file");
 
     // Write unjoined reverse fastq
     let mut unjoined_reverse_fastq = BufferedWriter::new(File::create(&Path::new("unjoined_reverse.fastq"))); 
-    fastq::write_fastq_owned(&mut unjoined_reverse_fastq, unjoined_reverse_seqs).ok()
-        .expect("Failed to write unjoined reverse fastq file");*/
+    fastq::write_fastq(&mut unjoined_reverse_fastq, unjoined_reverse_seqs).ok()
+        .expect("Failed to write unjoined reverse fastq file");
 }
 
+#[derive(Clone)]
 enum ProcessedSequence {
     Joined(fastq::Sequence),
     Unjoined(fastq::Sequence, fastq::Sequence),
