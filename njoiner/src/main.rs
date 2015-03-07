@@ -18,7 +18,9 @@ fn main() {
     let forward_seqs = fastq::read_fastq(&mut forward_fastq);
     let reverse_seqs = fastq::read_fastq(&mut reverse_fastq);
 
-    let joined_seqs_iter = forward_seqs.into_iter().zip(reverse_seqs.into_iter()).map(|(forward_seq, reverse_seq)| {
+    let joined_seqs_iter = forward_seqs.into_iter().zip(reverse_seqs.into_iter()).map(|(forward_seq, mut reverse_seq)| {
+        reverse_seq.bases.reverse_complement();
+        reverse_seq.qual = reverse_seq.qual.chars().rev().collect();
         fastq::Sequence {
             header: forward_seq.header,
             bases: forward_seq.bases + &bases::Bases::from_str("NNNNNNNNNN") + &reverse_seq.bases,
