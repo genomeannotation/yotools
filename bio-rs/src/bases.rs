@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Base {
     A,
     T,
@@ -35,7 +35,7 @@ impl Base {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Bases {
     pub bases: Vec<Base>,
 }
