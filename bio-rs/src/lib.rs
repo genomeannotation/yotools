@@ -1,6 +1,6 @@
-#![feature(io)]
+#![feature(collections)]
+#![feature(convert)]
 #![feature(core)]
-#![feature(unicode)]
 
 pub mod bases;
 pub mod fastq;

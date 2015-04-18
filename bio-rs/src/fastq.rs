@@ -1,13 +1,4 @@
-use std::old_io::{
-    BufferedReader,
-    BufferedWriter,
-    IoResult,
-    Reader,
-    Writer,
-};
-use std::str::StrExt;
-use std::string::String;
-
+use std::io;
 use bases::Bases;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -48,17 +39,21 @@ impl Sequence {
     }
 }
 
-pub fn read_fastq<R: Reader>(fastq: &mut BufferedReader<R>) -> Vec<Sequence> {
+pub fn read_fastq<R: io::Read>(fastq: &mut io::BufReader<R>) -> Vec<Sequence> {
+    use std::io::BufRead;
+
     let mut seqs = vec!();
     loop {
-        // Read the header line
-        let header_line = if let Ok(line) = fastq.read_line() { line } else { break; };
-        // Read the bases line
-        let bases_line = if let Ok(line) = fastq.read_line() { line } else { break; };
-        // Read the quality header line
-        let _ = if let Ok(line) = fastq.read_line() { line } else { break; };
-        // Read the quality line
-        let qual_line = if let Ok(line) = fastq.read_line() { line } else { break; };
+        // Read the four lines making up a fastq sequence
+        let mut header_line = String::new();
+        let mut bases_line = String::new();
+        let mut plus_line = String::new();
+        let mut qual_line = String::new();
+        
+        if fastq.read_line(&mut header_line).is_err() { break; }
+        if fastq.read_line(&mut bases_line).is_err() { break; }
+        if fastq.read_line(&mut plus_line).is_err() { break; }
+        if fastq.read_line(&mut qual_line).is_err() { break; }
 
         // Trim the '+' off the header line
         let header = header_line[1..header_line.len()].trim_right().to_string();
@@ -74,9 +69,9 @@ pub fn read_fastq<R: Reader>(fastq: &mut BufferedReader<R>) -> Vec<Sequence> {
     seqs
 }
 
-pub fn write_fastq<'a, W, I>(fastq: &mut BufferedWriter<W>, seqs: I) -> IoResult<()>
+pub fn write_fastq<'a, W, I>(fastq: &mut io::BufWriter<W>, seqs: I) -> io::Result<()>
     where
-        W: Writer,
+        W: io::Write,
         I: Iterator<Item=&'a Sequence>,
 {
     for seq in seqs {
@@ -87,9 +82,9 @@ pub fn write_fastq<'a, W, I>(fastq: &mut BufferedWriter<W>, seqs: I) -> IoResult
 
 // Owned version of write_fastq function
 // You should use write_fastq if you can, as this consumes the Sequences in the iterator
-pub fn write_fastq_owned<W, I>(fastq: &mut BufferedWriter<W>, seqs: I) -> IoResult<()>
+pub fn write_fastq_owned<W, I>(fastq: &mut io::BufWriter<W>, seqs: I) -> io::Result<()>
     where
-        W: Writer,
+        W: io::Write,
         I: Iterator<Item=Sequence>,
 {
     for seq in seqs {
@@ -98,11 +93,13 @@ pub fn write_fastq_owned<W, I>(fastq: &mut BufferedWriter<W>, seqs: I) -> IoResu
     Ok(())
 }
 
-fn write_fastq_seq<W: Writer>(fastq: &mut BufferedWriter<W>, seq: &Sequence) -> IoResult<()> {
-    try!(fastq.write_line(format!("@{}", seq.header).as_slice()));
-    try!(fastq.write_line(seq.bases.as_string().as_slice()));
-    try!(fastq.write_line("+"));
-    try!(fastq.write_line(seq.qual.as_slice()));
+fn write_fastq_seq<W: io::Write>(fastq: &mut io::BufWriter<W>, seq: &Sequence) -> io::Result<()> {
+    use std::io::Write;
+
+    try!(fastq.write(format!("@{}\n", seq.header).as_slice().as_bytes()));
+    try!(fastq.write(format!("{}\n", seq.bases.as_string()).as_slice().as_bytes()));
+    try!(fastq.write(b"+\n"));
+    try!(fastq.write(format!("{}\n", seq.qual).as_slice().as_bytes()));
     Ok(())
 }
 

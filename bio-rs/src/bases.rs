@@ -48,7 +48,8 @@ impl Bases {
 
         let bases = bases.chars().map(
             |b| {
-                match b.to_uppercase() {
+                let b = b.to_uppercase().next().expect("Failed to capitalize base");
+                match b {
                     'A' => A,
                     'T' => T,
                     'G' => G,
@@ -141,8 +142,8 @@ impl<'a> Add<&'a Bases> for Bases {
     type Output = Bases;
 
     fn add(self, _rhs: &'a Bases) -> Bases {
-        let Bases { bases: mut bases } = self;
-        bases.push_all(_rhs.bases.as_slice());
+        let Bases { mut bases } = self;
+        bases.push_all(_rhs.bases.as_ref());
         Bases { bases: bases }
     }
 }
