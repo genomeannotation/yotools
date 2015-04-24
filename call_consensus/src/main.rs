@@ -24,13 +24,15 @@ fn main() {
 
     let mut samples_file = BufReader::new(File::open(&Path::new("samples")).unwrap());
     let mut loci_file = BufReader::new(File::open(&Path::new("loci")).unwrap());
-    
-    // Read fastq file
-    let seqs = fastq::read_fastq(&mut fastq_file);
 
     // Store samples and loci
+    println!("Reading loci and samples...");
     let loci: Vec<String> = loci_file.lines().map(|x| x.ok().unwrap().as_slice().trim_right().to_string()).collect();
     let samples: Vec<String> = samples_file.lines().map(|x| x.ok().unwrap().as_slice().trim_right().to_string()).collect();
+    
+    // Read fastq file
+    println!("Reading fastq...");
+    let seqs = fastq::read_fastq(&mut fastq_file);
 
     // Map samples to maps of loci to piles of reads
     let mut seq_matrix: HashMap<String, HashMap<String, Vec<fastq::Sequence>>> = HashMap::new();

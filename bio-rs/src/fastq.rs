@@ -55,7 +55,11 @@ pub fn read_fastq<R: io::Read>(fastq: &mut io::BufReader<R>) -> Vec<Sequence> {
         if fastq.read_line(&mut plus_line).is_err() { break; }
         if fastq.read_line(&mut qual_line).is_err() { break; }
 
-        // Trim the '+' off the header line
+        if header_line.len() == 0 {
+            break;
+        }
+
+        // Trim the '@' off the header line
         let header = header_line[1..header_line.len()].trim_right().to_string();
 
         // Add the sequence
