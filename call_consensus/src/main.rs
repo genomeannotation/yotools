@@ -80,7 +80,9 @@ fn main() {
         consensus_matrix.write_all(loci.as_bytes());
         count_matrix.write_all(loci.as_bytes());
 
-        for (sample, seqs) in sample_map {
+        for sample in &samples {
+            let seqs = &sample_map[sample];
+
             // Output count matrix entry
             count_matrix.write_all(format!("\t{}", seqs.len()).as_bytes());
 
