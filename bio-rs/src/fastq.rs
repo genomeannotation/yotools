@@ -65,8 +65,8 @@ pub fn read_fastq<R: io::Read>(fastq: &mut io::BufReader<R>) -> Vec<Sequence> {
         // Add the sequence
         seqs.push(Sequence {
             header: header,
-            bases: Bases::from_str(bases_line.as_slice().trim_right()),
-            qual: qual_line.as_slice().trim_right().to_string(),
+            bases: Bases::from_str(bases_line.as_str().trim_right()),
+            qual: qual_line.as_str().trim_right().to_string(),
         });
     }
 
@@ -100,10 +100,10 @@ pub fn write_fastq_owned<W, I>(fastq: &mut io::BufWriter<W>, seqs: I) -> io::Res
 fn write_fastq_seq<W: io::Write>(fastq: &mut io::BufWriter<W>, seq: &Sequence) -> io::Result<()> {
     use std::io::Write;
 
-    try!(fastq.write(format!("@{}\n", seq.header).as_slice().as_bytes()));
-    try!(fastq.write(format!("{}\n", seq.bases.as_string()).as_slice().as_bytes()));
+    try!(fastq.write(format!("@{}\n", seq.header).as_bytes()));
+    try!(fastq.write(format!("{}\n", seq.bases.as_string()).as_bytes()));
     try!(fastq.write(b"+\n"));
-    try!(fastq.write(format!("{}\n", seq.qual).as_slice().as_bytes()));
+    try!(fastq.write(format!("{}\n", seq.qual).as_bytes()));
     Ok(())
 }
 
@@ -230,5 +230,5 @@ fn test_write_fastq() {
 
     assert!(result.is_ok());
 
-    assert_eq!(from_utf8(fastq.into_inner().into_inner().as_slice()).unwrap(), expected_fastq);
+    assert_eq!(from_utf8(fastq.into_inner().into_inner().as_str()).unwrap(), expected_fastq);
 }

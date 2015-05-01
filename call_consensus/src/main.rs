@@ -1,6 +1,7 @@
 #![feature(io)]
 #![feature(path)]
 #![feature(core)]
+#![feature(convert)]
 
 extern crate bio;
 
@@ -27,8 +28,8 @@ fn main() {
 
     // Store samples and loci
     println!("Reading loci and samples...");
-    let loci: Vec<String> = loci_file.lines().map(|x| x.ok().unwrap().as_slice().trim_right().to_string()).collect();
-    let samples: Vec<String> = samples_file.lines().map(|x| x.ok().unwrap().as_slice().trim_right().to_string()).collect();
+    let loci: Vec<String> = loci_file.lines().map(|x| x.ok().unwrap().as_str().trim_right().to_string()).collect();
+    let samples: Vec<String> = samples_file.lines().map(|x| x.ok().unwrap().as_str().trim_right().to_string()).collect();
     
     // Read fastq file
     println!("Reading fastq...");
@@ -52,10 +53,8 @@ fn main() {
     // Sort all of the sequences into a matrix
     println!("Filling matrix...");
     for seq in seqs {
-        use std::iter::IteratorExt;
-
-        let sample = seq.header.as_slice().split(' ').nth(1).unwrap().split(':').nth(3).unwrap().to_string();
-        let loci = seq.header.as_slice().split(' ').nth(3).unwrap().trim_right().to_string();
+        let sample = seq.header.as_str().split(' ').nth(1).unwrap().split(':').nth(3).unwrap().to_string();
+        let loci = seq.header.as_str().split(' ').nth(3).unwrap().trim_right().to_string();
 
         seq_matrix.get_mut(&loci).unwrap().get_mut(&sample).unwrap().push(seq);
     }
