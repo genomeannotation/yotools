@@ -8,7 +8,7 @@ extern crate bio;
 use std::cmp;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use std::fs::{File, OpenOptions};
+use std::fs::{create_dir, File, OpenOptions};
 use std::io::{
     BufRead,
     BufReader,
@@ -66,10 +66,6 @@ fn main() {
     let mut consensus_matrix = BufWriter::new(File::create(&Path::new("yay_nay_matrix.tsv")).unwrap()); 
     let mut count_matrix = BufWriter::new(File::create(&Path::new("counts_matrix.tsv")).unwrap()); 
     
-    let mut fasta1_file = BufWriter::new(File::create(&Path::new("1.fasta")).unwrap()); 
-    let mut fasta2_file = BufWriter::new(File::create(&Path::new("2.fasta")).unwrap()); 
-    let mut fasta3_file = BufWriter::new(File::create(&Path::new("3.fasta")).unwrap()); 
-    let mut fasta4_file = BufWriter::new(File::create(&Path::new("4.fasta")).unwrap()); 
 
     // Write column labels to matrices
     let samples_row = "\t".to_string() + &samples.connect("\t") + "\n";
@@ -77,6 +73,9 @@ fn main() {
     count_matrix.write_all(samples_row.as_bytes());
 
     for (loci, sample_map) in &seq_matrix {
+        // Create the loci's fasta folder
+        create_dir(loci);
+
         // Begin rows of matrices
         consensus_matrix.write_all(loci.as_bytes());
         count_matrix.write_all(loci.as_bytes());
@@ -111,25 +110,11 @@ fn main() {
 
                 consensus_matrix.write_all(format!("\t{}", cmp::min(4, seq_counts.len())).as_bytes());
 
-                // Write fastas
-                if seq_counts.len() > 0 {
-                    let &(ref bases1, count1) = &seq_counts[0];
-                    fasta1_file.write_all(format!(">{}_{} {}\n{}\n", loci, sample, count1, bases1.as_string()).as_bytes());
-                }
+                // Write fasta
+                let mut fasta_file = BufWriter::new(File::create(format!("{}/{}.fasta", loci, sample)).unwrap()); 
 
-                if seq_counts.len() > 1 {
-                    let &(ref bases2, count2) = &seq_counts[1];
-                    fasta2_file.write_all(format!(">{}_{} {}\n{}\n", loci, sample, count2, bases2.as_string()).as_bytes());
-                }
-
-                if seq_counts.len() > 2 {
-                    let &(ref bases3, count3) = &seq_counts[2];
-                    fasta3_file.write_all(format!(">{}_{} {}\n{}\n", loci, sample, count3, bases3.as_string()).as_bytes());
-                }
-
-                if seq_counts.len() > 3 {
-                    let &(ref bases4, count4) = &seq_counts[3];
-                    fasta4_file.write_all(format!(">{}_{} {}\n{}\n", loci, sample, count4, bases4.as_string()).as_bytes());
+                for &(ref bases, count) in &seq_counts {
+                    fasta_file.write_all(format!(">{}_{} {}\n{}\n", loci, sample, count, bases.as_string()).as_bytes());
                 }
 
                 // Write consensus file stuff
